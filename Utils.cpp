@@ -37,8 +37,8 @@ std::vector<std::string> lyxutils::str_utils::split_with_string(const std::strin
 	if (str == "") return result;
 	size_t start = 0;
 	size_t end = str.find(delString, start);
-	while (end > start&&end < str.length()) {
-		result.push_back(str.substr(start, end - start));
+	while (end < str.length()) {
+		if(end>start)result.push_back(str.substr(start, end - start));
 		start = end + delString.length();
 		end = str.find(delString, start);
 	}
@@ -62,15 +62,80 @@ std::string lyxutils::str_utils::upper(const std::string & str)
 	return res;
 }
 
-std::string lyxutils::str_utils::replace(const std::string & str, const std::string & oldStr, const std::string & newStr)
+std::string lyxutils::str_utils::replace(const std::string &str, const std::string &oldStr, const std::string &newStr, int count)
 {
 	std::string res = str;
 	size_t pos = res.find(oldStr, 0);
-	while (pos < str.length()) {
-		res.replace(pos, oldStr.length(), newStr);
-		pos = res.find(oldStr, pos + oldStr.length());
-	}
+	while (count--!=0 && pos < res.length()) {
+        res.replace(pos, oldStr.length(), newStr);
+        pos = res.find(oldStr, pos + newStr.length());
+    }
 	return res;
+}
+
+std::string lyxutils::str_utils::replace(const std::string &str, const std::string &oldStr, const std::string &newStr, int start, int end) {
+    if(start<0)start+=str.length();
+    if(end<0)end+=str.length();
+    if(start<0||start>str.length()||end<0||end>str.length())throw std::out_of_range("string index out of range");
+    if(end<start)throw std::logic_error("end position at left side of start position is not allowed");
+    std::string res=str.substr(start,end-start);
+    size_t pos = res.find(oldStr, 0);
+    while (pos < res.length()) {
+        res.replace(pos, oldStr.length(), newStr);
+        pos = res.find(oldStr, pos + newStr.length());
+    }
+    res=str.substr(0,start)+res+str.substr(end,str.length()-end);
+    return res;
+}
+
+int lyxutils::str_utils::count(const std::string &str, const std::string &sub, int start, int end) {
+    if(start<0)start+=str.length();
+    if(end<0)end+=str.length();
+    if(start<0||start>str.length()||end<0||end>str.length())throw std::out_of_range("string index out of range");
+    if(end<start)throw std::logic_error("end position at left side of start position is not allowed");
+    std::string temp=str.substr(start,end-start);
+    size_t pos=temp.find(sub,0);
+    int count=0;
+    while(pos<temp.length()){
+        count++;
+        pos=temp.find(sub,pos+sub.length());
+    }
+    return count;
+}
+
+std::string lyxutils::str_utils::multiply(const std::string &str, int count) {
+    std::string result=str;
+    while(--count>0){
+        result+=str;
+    }
+    return result;
+}
+
+std::string lyxutils::str_utils::center(const std::string &str, int width, char c) {
+    std::string result=str;
+    if(width<=result.length())return result;
+    int num=(width-str.length())/2;
+    std::string pad=multiply(type2str(c),num);
+    result=pad+result+pad;
+    if(result.length()<width)result+=type2str(c);
+    return result;
+}
+
+std::string lyxutils::str_utils::strip(const std::string &str, const std::string &chars) {
+    auto it=str.begin();
+    for(;it!=str.end();++it){
+        if(lyxutils::str_utils::count(chars, type2str(*it), 0, chars.length())==0)break;
+    }
+    auto it2=str.end()-1;
+    for(;it2!=it-1;--it2){
+        if(lyxutils::str_utils::count(chars, type2str(*it2), 0, chars.length())==0)break;
+    }
+    std::string result=str.substr(it-str.begin(),it2+1-it);
+    return result;
+}
+
+std::string lyxutils::str_utils::frame(const std::string &title, const std::string &text, int width, int pad, char border, int shift) {
+    return std::__cxx11::string();
 }
 
 bool lyxutils::io::read_csv(const std::string &fileName, std::vector<std::vector<float> > &table, const std::string &sep, std::string &report,
@@ -90,7 +155,8 @@ bool lyxutils::io::read_csv(const std::string &fileName, std::vector<std::vector
 		if (line == "")continue;
 		count++;
 		std::vector<std::string> field_values = lyxutils::str_utils::split(line, sep);
-		std::for_each(field_values.begin(), field_values.end(), [](std::string &str) {str = lyxutils::str_utils::replace(str, " ", ""); });
+		std::for_each(field_values.begin(), field_values.end(), [](std::string &str) {str = lyxutils::str_utils::replace(
+                str, " ", "", 0); });
 		if (first_time) {
 			first_time = false;
 			fields = fields > field_values.size() ? (int)(field_values.size()) : fields;

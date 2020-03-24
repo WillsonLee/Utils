@@ -6,6 +6,7 @@
 #include <iostream>
 #include <time.h>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <iomanip>
 #include <algorithm>
@@ -77,6 +78,18 @@ namespace lyxutils
 		  *\}
 		  */
 		void consoleProgressBar(int value, std::string delimiterL = "[", std::string increment = ">", std::string delimiterR = "]", std::string status = "");
+		/**
+		 * \brief an easy wrapper function used to print a vector(the vector element type need to implement << operator)
+		 * @tparam T element type of the vector
+		 * @tparam alloc allocator type of the vector(default:std::allocator<T>)
+		 * @param vec the vector to be printed
+		 * @param sep the separator between each output element
+		 */
+		template<typename T,typename alloc=std::allocator<T> >
+		void printVector(const std::vector<T,alloc> &vec,std::string sep=",") {
+		    for_each(vec.begin(),vec.end(),[&](const T &t){std::cout<<t<<sep;});
+		    std::cout<<std::endl;
+		}
 	}
 	/**\brief encapsule some convenient string operation
 	  */
@@ -97,8 +110,81 @@ namespace lyxutils
 		  */
 		std::string upper(const std::string &str);
 		/**\brief replace old string with new string
+		 * \param[in] str original string
+		 * \param[in] oldStr,newStr old string to be replaced and new string to replace
+		 * \param[in] count replace first count oldStr(default:-1 means no limit)
 		  */
-		std::string replace(const std::string &str, const std::string &oldStr, const std::string &newStr);
+        std::string replace(const std::string &str, const std::string &oldStr, const std::string &newStr, int count=-1);
+        /**\brief replace oldStr to newStr in str from position start to end
+         *
+         * @param str original string
+         * @param oldStr string to be replaced
+         * @param newStr string to replace
+         * @param start start position, negative index means count from tail to head
+         * @param end end position, negative index means count from tail to head
+         * @return new string with oldStr replaced by newStr
+         */
+        std::string replace(const std::string &str, const std::string &oldStr, const std::string &newStr, int start, int end);
+        /**\brief convert type value to string, type should implement << operator
+         */
+        template<typename T>
+        std::string type2str(const T &t){
+            std::stringstream ss;
+            ss<<t;
+            return ss.str();
+        }
+        /**\brief convert string to type value, type should implement >> operator
+         */
+        template<typename T>
+        T str2type(const std::string &str){
+            std::stringstream ss(str);
+            T t;
+            ss>>t;
+            return t;
+        }
+        /**\brief concatenate element from begin iterator to end iterator using link
+         */
+        template<typename iterator>
+        std::string join(const std::string &link,iterator begin,iterator end){
+            std::string result;
+            for(auto it=begin;it!=end;++it){
+                if(it!=begin)result+=link;
+                result+=type2str(*it);
+            }
+            return result;
+        }
+        /**\brief count occurance of sub in str from index start to end
+         */
+        int count(const std::string &str,const std::string &sub,int start,int end);
+        /**\brief repeat str count times
+         */
+        std::string multiply(const std::string &str,int count);
+        /**\brief center the str and fill space at both ends with c
+         */
+        std::string center(const std::string &str, int width, char c);
+        /**\brief frame the text like bellow
+         *
+         *          **************This is a title**************
+         *          *                                         *
+         *          *     here goes some explanation or p-    *
+         *          *     -atent.This function deals with     *
+         *          *     word wrap and alignment,etc.wi-     *
+         *          *     -th this method it's easy to g-     *
+         *          *     -enerate a framed text in a pr-     *
+         *          *     -ogram.                             *
+         *          *                                         *
+         *          *******************************************
+         *
+         *|---------|-----|------------------------------|-----|
+         *   shift    pad            text area             pad
+         *|----------------------------------------------------|
+         *                         width
+         *
+         */
+        std::string frame(const std::string &title,const std::string &text,int width,int pad,char border,int shift=0);
+        /**\brief strip the chars at both ends
+         */
+        std::string strip(const std::string &str,const std::string &chars=" ");
 	}
 	/**\brief encapsule some IO operation
 	  */
@@ -268,8 +354,7 @@ namespace lyxutils
 				d = -d;
 			}
 		}
-		/**\brief find the distance of point p to plane defined by ax+by+cz+d=0
-		  *\where a^2+b^2+c^2=1
+		/**\brief find the distance of point p to plane defined by ax+by+cz+d=0, where a^2+b^2+c^2=1
 		  */
 		template<class PointXYZ>
 		double distanceToPlane(const PointXYZ &p, double a, double b, double c, double d)
@@ -671,7 +756,7 @@ namespace lyxutils
 		void hsv2rgb(const std::vector<float> &hsv, std::vector<int> &rgb);
 	}
 	/**\brief encapsulate numpy equivalent functionalities
-	 * \this is poorly designed. don't use it unless you have nothing to use
+	 * \note: this is poorly designed. don't use it unless you have nothing to use
 	  */
 	namespace numpy
 	{
@@ -1336,7 +1421,7 @@ namespace lyxutils
 		}
 	}
 	/**\brief wrap up some Eigen functionalities
-	 * \this is poorly designed. don't use it unless you have nothing else to use
+	 * \note: this is poorly designed. don't use it unless you have nothing else to use
 	  */
 	namespace eigen_wrapper
 	{
@@ -1424,5 +1509,6 @@ namespace lyxutils
 namespace np = lyxutils::numpy;
 namespace alg = lyxutils::algorithms;
 namespace dbg = lyxutils::debug;
+namespace str = lyxutils::str_utils;
 namespace lin = lyxutils::eigen_wrapper;//lin for linear algebra
 #endif // !UTILS_H
