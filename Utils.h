@@ -15,12 +15,11 @@
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 
-/**\ self made lyxutils package
-  *\encapsulated some convenient functionalities
-  *\some namespaces are defined within this utils namespace, for brevity, '#define' directive can be applied to give them shorter alias
-  *\eg: #define lal lyxutils::algorithms, then lyxutils::algorithms namespace has the alias lal
-  *\or better, you can declare a namespace and assign the lyxutils::some_inner_namespace to it
-  *\eg: namespace myIO=lyxutils::io;
+/**\ self made lyxutils package. For convenience recommend giving an alias to the lengthy namespaces
+ * \usage: #include <Utils.h>
+ * \       namespace alg = lyxutils::algorithms;
+ * \       namespace dbg = lyxutils::debug;         //utilities for debug
+ * \       namespace str = lyxutils::str_utils;     //utilities for string operations
   */
 namespace lyxutils
 {
@@ -36,8 +35,8 @@ namespace lyxutils
 		  */
 		bool createFolder(const std::string folderPath);
 		/**\brief open a log file for writing log
-		  *\param[in] fileName the file name of log file
-		  *\return writable log file(write in append mode)
+		  *\usage: std::ofstream *log = dbg::openLogFile(file);
+		  *\       dbg::writeLog(*log,message);
 		  */
 		std::ofstream* openLogFile(std::string fileName);
 		/**\brief write message to opened log file
@@ -95,6 +94,7 @@ namespace lyxutils
 	  */
 	namespace str_utils
 	{
+        const int MIN_WORDWRAP_WIDTH=5;
 		/**\brief split the string with given delimiter
 		*\param[in] str the string to be splitted
 		*\param[in] delimiter the delimiter(note:can only be single char, if several are given, the delimiter is any one of them)
@@ -162,12 +162,21 @@ namespace lyxutils
         /**\brief center the str and fill space at both ends with c
          */
         std::string center(const std::string &str, int width, char c);
+        /**\brief left align the str and fill space at right end with c
+         */
+        std::string left(const std::string &str,int width,char c);
+        /**\brief right align the str and fill space at left end with c
+         */
+        std::string right(const std::string &str,int width,char c);
+        /**\brief auto wrap word
+         */
+        std::vector<std::string> word_wrap(const std::string &str,int width);
         /**\brief frame the text like bellow
          *
          *          **************This is a title**************
          *          *                                         *
          *          *     here goes some explanation or p-    *
-         *          *     -atent.This function deals with     *
+         *          *     atent.This function deals with      *
          *          *     word wrap and alignment,etc.wi-     *
          *          *     -th this method it's easy to g-     *
          *          *     -enerate a framed text in a pr-     *
@@ -1506,9 +1515,4 @@ namespace lyxutils
 		void eig3d(const Eigen::Matrix3d &mat, Eigen::Matrix3d &eigenValues, Eigen::Matrix3d &eigenVectors);
 	}
 }
-namespace np = lyxutils::numpy;
-namespace alg = lyxutils::algorithms;
-namespace dbg = lyxutils::debug;
-namespace str = lyxutils::str_utils;
-namespace lin = lyxutils::eigen_wrapper;//lin for linear algebra
 #endif // !UTILS_H

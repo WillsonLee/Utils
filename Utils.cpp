@@ -104,8 +104,9 @@ int lyxutils::str_utils::count(const std::string &str, const std::string &sub, i
 }
 
 std::string lyxutils::str_utils::multiply(const std::string &str, int count) {
-    std::string result=str;
-    while(--count>0){
+    if(count<0)throw std::invalid_argument("times of repetition should not be negative!");
+    std::string result;
+    while(count-->0){
         result+=str;
     }
     return result;
@@ -135,7 +136,77 @@ std::string lyxutils::str_utils::strip(const std::string &str, const std::string
 }
 
 std::string lyxutils::str_utils::frame(const std::string &title, const std::string &text, int width, int pad, char border, int shift) {
-    return std::__cxx11::string();
+    if(pad<0)throw std::invalid_argument("pad should not be negative!");
+    if(width<MIN_WORDWRAP_WIDTH+2+2*pad)throw std::invalid_argument("width should be at least 1+pad+MIN_WORDWRAP_WIDTH+pad+1!");
+    if(title.length()>width)throw std::invalid_argument("width of title should be less than width!");
+    std::vector<std::string> lines=word_wrap(text,width-2*pad-2);
+    shift=shift<0?0:shift;
+    std::string prefix=multiply(" ",shift);
+    std::string top=prefix+center(title,width,border);
+    std::string gap=prefix+border+center("",width-2,' ')+border;
+    std::string bottom=prefix+center("",width,border);
+    lines.insert(lines.begin(),gap);
+    lines.insert(lines.begin(),top);
+    lines.push_back(gap);
+    lines.push_back(bottom);
+    for(int i=2;i<lines.size()-2;++i){
+        lines[i]=prefix+border+center(lines[i],width-2,' ')+border;
+    }
+    return join("\n",lines.begin(),lines.end());
+}
+
+std::string lyxutils::str_utils::left(const std::string &str, int width, char c) {
+    std::string result=str;
+    if(result.length()<width){
+        result+=multiply(std::string(1,c),width-result.length());
+    }
+    return result;
+}
+
+std::string lyxutils::str_utils::right(const std::string &str, int width, char c) {
+    std::string result=str;
+    if(result.length()<width){
+        result=multiply(std::string(1,c),width-result.length())+result;
+    }
+    return result;
+}
+
+std::vector<std::string> lyxutils::str_utils::word_wrap(const std::string &str, int width) {
+    if(width<MIN_WORDWRAP_WIDTH)throw std::invalid_argument("width should be greater than MIN_WORDWRAP_WIDTH");
+    std::vector<std::string> res;
+    //get word wrap result of a single paragraph
+    auto wrap_single_para=[&](const std::string &str, int width)->std::vector<std::string>{
+        std::vector<std::string> result;
+        if(str.length()<=width)result.push_back(lyxutils::str_utils::left(str,width,' '));
+        else{
+            auto isLetter=[](char c)->int{if((c>=65&&c<91)||(c>=97&&c<123))return 1;else return 0;};
+            std::string line;
+            for(int i=0;i<str.length();){
+                if(line.length()==width-1&&isLetter(str[i])){
+                    if(isLetter(*(line.end()-1))) {
+                        line.push_back('-');
+                    }
+                    else{
+                        line.push_back(' ');
+                    }
+                }
+                else{
+                    line.push_back(str[i++]);
+                }
+                if(line.length()==width||i==str.length()) {
+                    result.push_back(lyxutils::str_utils::left(line,width,' '));
+                    line.clear();
+                }
+            }
+        }
+        return result;
+    };
+    std::vector<std::string> paras=split(str,"\n");
+    for(int i=0;i<paras.size();++i){
+        std::vector<std::string> wrap_p=wrap_single_para(paras[i],width);
+        for_each(wrap_p.begin(),wrap_p.end(),[&](const std::string &line){res.push_back(line);});
+    }
+    return res;
 }
 
 bool lyxutils::io::read_csv(const std::string &fileName, std::vector<std::vector<float> > &table, const std::string &sep, std::string &report,
@@ -314,6 +385,7 @@ void lyxutils::debug::writeLog(std::ofstream & log, std::string message, std::st
 {
 	if (log.is_open()) {
 		log << lyxutils::debug::getTimeString() << "\t" << message << end;
+		log.flush();
 	}
 }
 
@@ -347,22 +419,22 @@ void lyxutils::eigen_wrapper::eig3d(const Eigen::Matrix3d & mat, Eigen::Matrix3d
 {
 	Eigen::EigenSolver<Eigen::Matrix3d> es(mat);
 	std::vector<double> idx;
-	np::range<double>(idx, 3);
+	numpy::range<double>(idx, 3);
 	eigenValues = es.pseudoEigenvalueMatrix();
 	eigenVectors = es.pseudoEigenvectors();
 	std::sort(idx.begin(), idx.end(), [&eigenValues](int pre, int post)->bool {return eigenValues(pre, pre) > eigenValues(post, post); });
 	std::vector<std::vector<double> > elementary, eig, vec, eigOrdered, eigTemp, vecOrdered;
-	np::broadcast<double>(0, 3, 3, elementary);
+	numpy::broadcast<double>(0, 3, 3, elementary);
 	for (int i = 0; i < idx.size(); ++i) {
 		elementary[i][idx[i]] = 1;
 	}
 	//the stupid Eigen can not multiply two matrix. reported some C2338 error:YOU_TRIED_CALLING_A_VECTOR_METHOD_ON_A_MATRIX
 	//and thus I have to use my self-defined multiplication for 2d vectors, thank god it's only 3x3 matrix
-	lin::convert3d(eig, eigenValues, false);
-	lin::convert3d(vec, eigenVectors, false);
-	np::multiply(eig, elementary, eigTemp);
-	np::multiply(elementary, eigTemp, eigOrdered);
-	np::multiply(vec, elementary, vecOrdered);
-	lin::convert3d(eigOrdered, eigenValues);
-	lin::convert3d(vecOrdered, eigenVectors);
+	convert3d(eig, eigenValues, false);
+	convert3d(vec, eigenVectors, false);
+	numpy::multiply(eig, elementary, eigTemp);
+	numpy::multiply(elementary, eigTemp, eigOrdered);
+	numpy::multiply(vec, elementary, vecOrdered);
+	convert3d(eigOrdered, eigenValues);
+	convert3d(vecOrdered, eigenVectors);
 }

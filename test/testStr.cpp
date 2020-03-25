@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 using namespace std;
+namespace str=lyxutils::str_utils;
+namespace dbg=lyxutils::debug;
 
 int main(int argc,char **argv){
     string s="that day before these thieves got caught this town looks like hell";
@@ -58,14 +60,25 @@ int main(int argc,char **argv){
     cout<<"sentence is:"<<all<<endl<<"\t";
     cout<<"number of 'are' is:"<<str::count(all,"are",0,all.length())<<endl<<"\t";
     cout<<"number of 'are' within range(15,41):"<<str::count(all,"are",15,41)<<",the sub sentence is:"<<all.substr(15,41-15)<<endl;
-    cout<<"9.center test:"<<endl<<"\t";
+    cout<<"9.alignment test:"<<endl<<"\t";
     std::string grt="I'm groot!!";
     cout<<"repeat x 4:"<<grt<<"=========>"<<str::multiply(grt,4)<<endl<<"\t";
-    cout<<"**center**(width 20):"<<str::center(grt,20,'*')<<endl<<"\t";
     cout<<"**center**(width 21):"<<str::center(grt,21,'*')<<endl<<"\t";
-    cout<<"**center**(width 10):"<<str::center(grt,10,'*')<<endl;
-    cout<<"strip test:"<<endl<<"\t";
+    cout<<"**center**(width 20):"<<str::center(grt,20,'*')<<endl<<"\t";
+    cout<<"**center**(width 10):"<<str::center(grt,10,'*')<<endl<<"\t";
+    cout<<"left******(width 20):"<<str::left(grt,20,'*')<<endl<<"\t";
+    cout<<"*****right(width 20):"<<str::right(grt,20,'*')<<endl<<endl;
+    cout<<"10.strip test:"<<endl<<"\t";
     string st1="   hello thank you  ";
     string res1=str::strip(st1);
     cout<<"original string|"<<st1<<"|strip space=======>|"<<res1<<"|strip 'heou'|"<<str::strip(res1,"heou")<<"|"<<endl;
+    cout<<"11.frame and word wrap test:"<<endl<<endl<<"word wrap:"<<endl<<endl;
+    string txt="  This file is part of the GNU ISO C++ Library. This library is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation.either version 3, or (at your option) any later version.";
+    vector<string> wrap=str::word_wrap(txt, 60);
+    dbg::printVector(wrap, "\n");
+    cout<<endl<<"framed text:"<<endl<<endl;
+    txt+="\n  This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.";
+    txt+="\n  Under Section 7 of GPL version 3, you are granted additional permissions described in the GCC Runtime Library Exception, version 3.1, as published by the Free Software Foundation.";
+    cout<<str::frame("license",txt,80,5,'*',10);
+    cout<<endl;
 }
