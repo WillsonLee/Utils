@@ -598,6 +598,64 @@ void lyxutils::io::CLParser::parse(const std::vector<std::string> &argv) {
     }
 }
 
+std::string lyxutils::io::CLParser::generateHelp(std::string command, bool requireObj, std::string description,
+                                                 const std::vector<std::string> &optNames,
+                                                 const std::vector<std::string> &optDescription,
+                                                 const std::vector<std::string> &optArgName) {
+    const int leftCol=30;
+    const int rightCol=50;
+    if(_pattern_set&&optNames.size()!=_opt_patterns.size()){
+        throw std::logic_error("optNames size("+str_utils::type2str(optNames.size())+") != number of defined options("+str_utils::type2str(_opt_patterns.size())+")");
+    }
+    std::string result="usage: "+command+" [options]... ";
+    if(requireObj){
+        result+="<object>...\n";
+    }else{
+        result+="[object]...\n";
+    }
+    std::vector<std::string> descrips=str_utils::word_wrap(description,80);
+    for(std::string line:descrips)result+=line+"\n";
+    result+="\noptions:\n";
+    for(int i=0;i<optNames.size();++i){
+        if(_pattern_set&&_opt_patterns.find(optNames[i])==_opt_patterns.end())throw std::logic_error("optName not contained in option pattern!");
+        std::string optField;
+        std::string o="    ";
+        if(_pattern_set&&_opt_patterns[optNames[i]].abbr){
+            o="-"+str_utils::type2str(*_opt_patterns[optNames[i]].abbr)+", ";
+        }
+        optField+="  "+o+"--"+optNames[i];
+        std::string argName="value";
+        if(optArgName.size()>i&&optArgName[i]!="")argName=optArgName[i];
+        int arg_state=0;
+        if(_pattern_set){
+            arg_state=_opt_patterns[optNames[i]].hasArg;
+        }
+        else{
+            if(optArgName.size()<=i||optArgName[i]=="")arg_state=0;
+            else arg_state=1;
+        }
+        if(arg_state==2){
+            optField+="="+argName;
+        }
+        else if(arg_state==1){
+            optField+="[="+argName+"]";
+        }
+        if(optField.length()<leftCol-2){
+            optField=str_utils::left(optField,leftCol,' ');
+        }
+        else{
+            optField+="\n"+str_utils::multiply(" ",leftCol);
+        }
+        result+=optField;
+        std::vector<std::string> optDes=str_utils::word_wrap(optDescription[i],rightCol);
+        for(int i=0;i<optDes.size();++i){
+            if(i!=0)result+=str_utils::multiply(" ",leftCol);
+            result+=optDes[i]+"\n";
+        }
+    }
+    return result;
+}
+
 lyxutils::io::CLOption::~CLOption() {
     if(abbr)delete abbr;
 }

@@ -370,6 +370,21 @@ namespace lyxutils
             /**\brief get all parameters
              */
             std::vector<std::string> getParameters();
+            /**\brief generate command line help message
+             * @param command the current command of this parser
+             * @param requireObj whether this command required an object
+             * @param description the description of this command
+             * @param optNames all the available option names(if option pattern is set,the number of names should equal
+             *                 to the number of predefined options, or a logic_error will be throw; Each of the option
+             *                 name should also equal the predefined option name, or a logic_error will be throw
+             * @param optDescription description for each option
+             * @param optArgName argument name of each option
+             * @return help message string
+             */
+            std::string generateHelp(std::string command, bool requireObj, std::string description,
+                                     const std::vector<std::string> &optNames,
+                                     const std::vector<std::string> &optDescription,
+                                     const std::vector<std::string> &optArgName = std::vector<std::string>());
 		private:
 		    bool _pattern_set=false;
             std::map<std::string,std::string> _opt_val;

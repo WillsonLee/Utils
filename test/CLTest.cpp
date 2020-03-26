@@ -18,9 +18,16 @@ int main(int argc,char **argv) {
         for_each(objs.begin(),objs.end(),[](string obj){cout<<obj<<"\t";});
         cout<<endl;
     };
+    vector<string> optNames={"help","version","verbose","target","when","object","alignment"};
+    vector<string> optDescr={"display this help message","display the version","display debug info to std out",
+                             "set target file as FILE","set the time of file modification as TIME, format:YYYYMMDD-hh:mm:ss",
+                             "set output file name as OUTPUT","set alignment as ALIGN(options:left,center,right)"};
+    vector<string> optArgName={"","","","FILE","TIME","OUTPUT","ALIGN"};
+    cout<<str::center("help message without pattern",60,'=')<<endl;
+    cout<<parser.generateHelp("cmd",true,"do some wonderful things when executed",optNames,optDescr,optArgName)<<endl;
     cout<<str::center("test without pattern",60,'=')<<endl;
     try{
-        string cmd="ls --all -l --color=always test/ test2/";
+        string cmd="cmd --all -l --color=always test/ test2/";
         parser.parse(cmd);
         cout<<"the command is:"<<cmd<<endl;
         cout<<"has option `all`?:"<<parser.hasOption("all")<<endl;
@@ -29,7 +36,6 @@ int main(int argc,char **argv) {
     }catch(invalid_argument ia){
         cout<<endl<<ia.what()<<endl;
     }
-    cout<<str::center("test with pattern",60,'=')<<endl;
     xio::CLOption options[]={
             {"help",0,new char('h')},
             {"version",0,new char('v')},
@@ -40,12 +46,15 @@ int main(int argc,char **argv) {
             {"alignment",1,NULL}
     };
     parser.setOptionPattern(7,options);
+    cout<<str::center("help message with pattern",60,'=')<<endl;
+    cout<<parser.generateHelp("cmd",true,"do some wonderful things when executed",optNames,optDescr,optArgName)<<endl;
+    cout<<str::center("test with pattern",60,'=')<<endl;
     try{
-        string cmd="g++ -h --verbose --target a.cpp -o liba.so --alignment=right --when folder1/ folder2/ folder3/";
+        string cmd="cmd -h --verbose --target a.cpp -o liba.so --alignment=right --when folder1/ folder2/ folder3/";
         parser.parse(cmd);
         cout<<"correct test:"<<cmd<<endl;
         display_parse(parser);
-        cmd="g++ --build-only folder1/";
+        cmd="cmd --build-only folder1/";
         cout<<"unrecognized option test:"<<cmd<<endl;
         parser.parse(cmd);
         display_parse(parser);
@@ -54,7 +63,7 @@ int main(int argc,char **argv) {
     }
     cout<<str::center("-",60,'-')<<endl;
     try{
-        string cmd="g++ --target --verbose --alignment=right folder1/ folder2/";
+        string cmd="cmd --target --verbose --alignment=right folder1/ folder2/";
         cout<<"lack required arguments test:"<<cmd<<endl;
         parser.parse(cmd);
         display_parse(parser);
@@ -63,7 +72,7 @@ int main(int argc,char **argv) {
     }
     cout<<str::center("-",60,'-')<<endl;
     try{
-        string cmd="g++ --verbose --alignment=right --target folder1/ folder2/";
+        string cmd="cmd --verbose --alignment=right --target folder1/ folder2/";
         cout<<"required argument robs parameter test:"<<cmd<<endl;
         parser.parse(cmd);
         display_parse(parser);
@@ -72,7 +81,7 @@ int main(int argc,char **argv) {
     }
     cout<<str::center("-",60,'-')<<endl;
     try{
-        string cmd="g++ --verbose args -t a.cpp folder1/";
+        string cmd="cmd --verbose args -t a.cpp folder1/";
         cout<<"insert parameter after no-argument-option:"<<cmd<<endl;
         parser.parse(cmd);
         display_parse(parser);
@@ -81,7 +90,7 @@ int main(int argc,char **argv) {
     }
     cout<<str::center("test options from file",60,'=')<<endl;
     try{
-        parser.parse("work", "config.txt");
+        parser.parse("cmd", "config.txt");
         display_parse(parser);
     }catch(invalid_argument ia){
         cout<<endl<<ia.what()<<endl;
