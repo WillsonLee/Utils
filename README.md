@@ -6,7 +6,7 @@
 mkdir build && cd build
 cmake ..
 make -j4
-make install
+sudo make install
 ```
 
 使用：
@@ -15,7 +15,7 @@ make install
 #CMakeLists.txt
 include_directories(/usr/local/include/lyxutils/)
 link_directories(/usr/local/lib/)
-target_link_libraries(... utils)
+target_link_libraries(<executable> utils)
 ```
 
 ```c++
