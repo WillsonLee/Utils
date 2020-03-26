@@ -11,7 +11,7 @@ namespace str=lyxutils::str_utils;
 namespace dbg=lyxutils::debug;
 
 int main(int argc,char **argv){
-    string s="that day before these thieves got caught this town looks like hell";
+    string s="that day before ththese thieves got caught this town looks like hell";
     cout<<"original string:"<<s<<endl;
     vector<string> ss=str::split(s,"bt");
     cout<<"1.split with 'b' and 't':"<<endl<<"\t";
@@ -22,6 +22,9 @@ int main(int argc,char **argv){
     cout<<"3.split with non existed character 'z':"<<endl<<"\t";
     vector<string> ss3=str::split(s,"z");
     dbg::printVector(ss3);
+    cout<<"3+.split considering multiple space as one:"<<endl<<"\t";
+    string spstr="cmake  -v --find-package\t-build\t\trelease\t   ..";
+    dbg::printVector(str::split(spstr," \t"));
     string lu="HelLo,mY naME Is aLIsA";
     cout<<"4.case conversion test:"<<endl<<"\t"<<lu<<"=====>lower case:"<<str::lower(lu)<<"========>upper case:"<<str::upper(lu)<<endl;
     string rep="I has a book and I has never been to Shanghai";

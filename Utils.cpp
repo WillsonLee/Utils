@@ -213,11 +213,11 @@ bool lyxutils::io::read_csv(const std::string &fileName, std::vector<std::vector
                             std::vector<std::string> &headers, int fields, bool read_header, int numberOfRedirect, void(*directFunc)(const std::vector<float>&))
 {
 	if (!lyxutils::io::fileExists(fileName))
-		throw std::runtime_error("文件不存在!");
+		throw std::runtime_error("file not exist!");
 	std::fstream inFile(fileName);
 	std::stringstream ssReport;
-	ssReport << lyxutils::debug::getTimeString() << ":打开文件 " << fileName << std::endl;
-	ssReport << "文件报告:" << std::endl;
+	ssReport << lyxutils::debug::getTimeString() << ":opened file " << fileName << std::endl;
+	ssReport << "file report:" << std::endl;
 	std::string line;
 	bool first_time = true;
 	int count = 0;
@@ -280,7 +280,7 @@ bool lyxutils::io::read_csv(const std::string &fileName, std::vector<std::vector
 	if (inFile.is_open()) {
 		inFile.close();
 	}
-	ssReport << "读取文件共有" << count << "行非空数据行,其中错误" << error_count << "行" << std::endl;
+	ssReport << "total non-empty line of read file:" << count << ",error line:" << error_count << std::endl;
 	report = ssReport.str();
 	return true;
 }
@@ -355,40 +355,6 @@ std::string lyxutils::debug::getTimeString()
 	return tmp;
 }
 
-bool lyxutils::debug::createFolder(const std::string folderPath)
-{
-	if (access(folderPath.c_str(), 0) == -1) {
-#ifdef _WIN32
-	    bool created=_mkdir(folderPath.c_str());
-#endif
-#ifdef linux
-	    bool created=mkdir(folderPath.c_str(),775);
-#endif
-		if (created == 0) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-	return true;
-}
-
-std::ofstream * lyxutils::debug::openLogFile(std::string fileName)
-{
-	std::ofstream *log = new std::ofstream();
-	log->open(fileName, std::ios::app);
-	return log;
-}
-
-void lyxutils::debug::writeLog(std::ofstream & log, std::string message, std::string end)
-{
-	if (log.is_open()) {
-		log << lyxutils::debug::getTimeString() << "\t" << message << end;
-		log.flush();
-	}
-}
-
 void lyxutils::debug::consoleProgressBar(int value, std::string delimiterL, std::string increment, std::string delimiterR, std::string status)
 {
 	if (value == 0) {
@@ -437,4 +403,201 @@ void lyxutils::eigen_wrapper::eig3d(const Eigen::Matrix3d & mat, Eigen::Matrix3d
 	numpy::multiply(vec, elementary, vecOrdered);
 	convert3d(eigOrdered, eigenValues);
 	convert3d(vecOrdered, eigenVectors);
+}
+
+bool lyxutils::io::createFolder(const std::string folderPath)
+{
+    if (access(folderPath.c_str(), 0) == -1) {
+#ifdef _WIN32
+        bool created=_mkdir(folderPath.c_str());
+#endif
+#ifdef linux
+        bool created=mkdir(folderPath.c_str(),775);
+#endif
+        if (created == 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::ofstream * lyxutils::io::openLogFile(std::string fileName)
+{
+    std::ofstream *log = new std::ofstream();
+    log->open(fileName, std::ios::app);
+    return log;
+}
+
+void lyxutils::io::writeLog(std::ofstream & log, std::string message, std::string end)
+{
+    if (log.is_open()) {
+        log << lyxutils::debug::getTimeString() << "\t" << message << end;
+        log.flush();
+    }
+}
+
+lyxutils::io::CLParser::CLParser() {
+
+}
+
+void lyxutils::io::CLParser::parse(std::string command) {
+    std::vector<std::string> argv=str_utils::split(command," \t");
+    parse(argv);
+}
+
+void lyxutils::io::CLParser::parse(int argc, char **argv) {
+    std::vector<std::string> cmd;
+    for(int i=0;i<argc;++i){
+        cmd.push_back(argv[i]);
+    }
+    parse(cmd);
+}
+
+void lyxutils::io::CLParser::parse(std::string commands, std::string filename) {
+    if (!lyxutils::io::fileExists(filename))throw std::runtime_error("file not exist!");
+    std::fstream inFile(filename);
+    std::string cl=commands;
+    if(inFile.is_open()){
+        std::string line;
+        while(std::getline(inFile,line)){
+            cl+=" "+line;//make sure there is a space between two lines
+        }
+        inFile.close();
+    }
+    else{
+        throw std::runtime_error("open file " + filename + " failed");
+    }
+    cl=str_utils::replace(cl,"\n"," ");
+    parse(cl);
+}
+
+void lyxutils::io::CLParser::setOptionPattern(int num_opts, const lyxutils::io::CLOption *options) {
+    _opt_patterns.clear();
+    _short2verbose.clear();
+    for(int i=0;i<num_opts;++i){
+        _opt_patterns[options[i].optName]=options[i];
+        if(options[i].abbr) {
+            _short2verbose[str_utils::type2str(*options[i].abbr)]=options[i].optName;
+        }
+    }
+    _pattern_set=true;
+}
+
+void lyxutils::io::CLParser::clearOptionPattern() {
+    _pattern_set=false;
+    _opt_patterns.clear();
+    _short2verbose.clear();
+}
+
+bool lyxutils::io::CLParser::hasOption(std::string optName) {
+    return _opt_val.find(optName)!=_opt_val.end();
+}
+
+std::string lyxutils::io::CLParser::getOptionArg(std::string optName) {
+    return _opt_val[optName];
+}
+
+std::vector<std::string> lyxutils::io::CLParser::getParameters() {
+    return _parameters;
+}
+
+std::map<std::string, std::string> lyxutils::io::CLParser::getAllOptions() {
+    return _opt_val;
+}
+
+void lyxutils::io::CLParser::parse(const std::vector<std::string> &argv) {
+    _opt_val.clear();
+    _parameters.clear();
+    auto isShort=[](std::string chuck)->bool{return chuck.size() >= 2 && chuck[0] == '-' && chuck[1]!='-';};
+    auto isLong=[](std::string chuck)->bool{return chuck.size() > 2 && chuck.substr(0, 2) == "--";};
+    auto isParameter=[](std::string chuck)->bool{return chuck[0]!= '-';};
+    int argc=argv.size();
+    for(int i=1;i<argc;++i) {
+        std::string chuck(argv[i]);
+        std::vector<std::string> sv=str_utils::split(chuck,"=");
+        std::string opt=sv[0];
+        if (isShort(opt)) {//short option
+            if(_pattern_set){
+                if(_short2verbose.find(opt.substr(1,opt.length()-1))!=_short2verbose.end()){
+                    opt=sv[0]="--"+_short2verbose[opt.substr(1,opt.length()-1)];
+                    //handle the converted opt to if(isLong(opt)){...} to process, so no continue here
+                }
+                else{
+                    throw std::invalid_argument("unrecognized option:"+opt);
+                }
+            }
+            else{
+                if(sv.size()>1){
+                    _opt_val[opt.substr(1,opt.length()-1)]=sv[1];
+                }
+                else if(i+1<argc&&isParameter(argv[i+1])){
+                    _opt_val[opt.substr(1,opt.length()-1)]=std::string(argv[i+1]);
+                    ++i;//next element has been used,need to skip it in next loop
+                }
+                else{
+                    _opt_val[opt.substr(1,opt.length()-1)]="";//no argument if not found
+                }
+                continue;
+            }
+        }
+        if (isLong(opt)) {//long option
+            if(_pattern_set){
+                if(_opt_patterns.find(opt.substr(2,opt.length()-2))!=_opt_patterns.end()){
+                    if(_opt_patterns[opt.substr(2,opt.length()-2)].hasArg==2){
+                        if(sv.size()>1){
+                            _opt_val[opt.substr(2,opt.length()-2)]=sv[1];
+                        }
+                        else if(i+1<argc&&isParameter(argv[i+1])){
+                            _opt_val[opt.substr(2,opt.length()-2)]=std::string(argv[i+1]);
+                            ++i;//next element has been used,need to skip it in next loop
+                        }
+                        else{
+                            std::string full_name=opt.substr(2,opt.length()-2);
+                            std::string type_hint="--"+full_name;
+                            if(_opt_patterns[full_name].abbr)type_hint+="("+str_utils::type2str(_opt_patterns[full_name].abbr)+")";
+                            throw std::invalid_argument("option "+type_hint+" has no argument!");
+                        }
+                        continue;
+                    }
+                    else if(_opt_patterns[opt.substr(2,opt.length()-2)].hasArg==1){
+                        if(sv.size()>1){
+                            _opt_val[opt.substr(2,opt.length()-2)]=sv[1];
+                        }
+                        else{
+                            _opt_val[opt.substr(2,opt.length()-2)]="";
+                        }
+                    }
+                    else{
+                        _opt_val[opt.substr(2,opt.length()-2)]="";//hasArg=0,no argument required
+                    }
+                }
+                else{
+                    throw std::invalid_argument("unrecognized option:"+opt);
+                }
+            }
+            else{
+                if(sv.size()>1){
+                    _opt_val[opt.substr(2,opt.length()-2)]=sv[1];
+                }
+                else if(i+1<argc&&isParameter(argv[i+1])){
+                    _opt_val[opt.substr(2,opt.length()-2)]=std::string(argv[i+1]);
+                    ++i;//next element has been used,need to skip it in next loop
+                }
+                else{
+                    _opt_val[opt.substr(2,opt.length()-2)]="";
+                }
+                continue;
+            }
+        }
+        else {//parameters
+            _parameters.push_back(chuck);
+        }
+    }
+}
+
+lyxutils::io::CLOption::~CLOption() {
+    if(abbr)delete abbr;
 }

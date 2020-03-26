@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <map>
 #include <iomanip>
 #include <algorithm>
 #include <cmath>
@@ -17,9 +18,10 @@
 
 /**\ self made lyxutils package. For convenience recommend giving an alias to the lengthy namespaces
  * \usage: #include <Utils.h>
- * \       namespace alg = lyxutils::algorithms;
+ * \       namespace alg = lyxutils::algorithms;    //utilities for some algorithm
  * \       namespace dbg = lyxutils::debug;         //utilities for debug
  * \       namespace str = lyxutils::str_utils;     //utilities for string operations
+ * \       namespace xio = lyxutils::io;            //utilities for io operation(including file io and std io)
   */
 namespace lyxutils
 {
@@ -29,22 +31,6 @@ namespace lyxutils
 		  *\return the current time string in HH:MM:SS format
 		  */
 		std::string getTimeString();
-		/**\brief create a folder named folderPath if it is not existed
-		  *\param[in] folderPath the folder path to be created
-		  *\return true if creation succeeded or the folder is already existed;false otherwise
-		  */
-		bool createFolder(const std::string folderPath);
-		/**\brief open a log file for writing log
-		  *\usage: std::ofstream *log = dbg::openLogFile(file);
-		  *\       dbg::writeLog(*log,message);
-		  */
-		std::ofstream* openLogFile(std::string fileName);
-		/**\brief write message to opened log file
-		  *\param[in] log the file stream to write to
-		  *\param[in] message the message to write
-		  *\param[in] end the message end(default end is "\n",automatically carriage return)
-		  */
-		void writeLog(std::ofstream &log, std::string message, std::string end = "\n");
 		/**\brief time the function f
 		  *\param[in] f the function to be timed
 		  *\note: the unit of time is millisecond,the function being timed should take no argument
@@ -199,31 +185,47 @@ namespace lyxutils
 	  */
 	namespace io
 	{
-		  /**\brief read csv file
-		    *\param[in] fileName the input file name
-		    *\param[out] table the 2d vector to store the data
-		    *\param[in] sep the separator to separate each column, usually ","
-		    *\param[out] report the reading process report(record open file name,time,bad lines, etc)
-		    *\param[in] fields the number of fields to read(-1 means use total number of fields in the first line of the file)
-		    *\param[in] read_header whether to read first line as header or not
-		    *\param[out] headers the headers of the table(if read_header is true)
-		    *\param[in] numberOfRedirect number of fields to be redirected(not stored in table),should be less than fields
-		    *\param[in] directFunc the function to redirect first numberOfRedirect of fields
-		    *\note:parameter of directFunc must have the same dimension as numberOfRedirect
-		    *\the last parameter directFuncs can be defined as follows if trying to redirect to point cloud(cloud_in is a global pc pointer)
-					void direct(const std::vector<float> &vec) {
-						pcl::PointXYZRGB pt = pcl::PointXYZRGB();
-						pt.x = vec[0];
-						pt.y = vec[1];
-						pt.z = vec[2];
-						pt.r = (uint8_t)(vec[3]);
-						pt.g = (uint8_t)(vec[4]);
-						pt.b = (uint8_t)(vec[5]);
-						cloud_in->points.push_back(pt);
-					}
-			*\addition: if the columns of data is less than required, it will fill with 0s; 
-			*\			if data column is larger than required, the rest will be abbreviated
-		    */
+        /**\brief create a folder named folderPath if it is not existed
+          *\param[in] folderPath the folder path to be created
+          *\return true if creation succeeded or the folder is already existed;false otherwise
+          */
+        bool createFolder(const std::string folderPath);
+        /**\brief open a log file for writing log
+          *\usage: std::ofstream *log = dbg::openLogFile(file);
+          *\       dbg::writeLog(*log,message);
+          */
+        std::ofstream* openLogFile(std::string fileName);
+        /**\brief write message to opened log file
+          *\param[in] log the file stream to write to
+          *\param[in] message the message to write
+          *\param[in] end the message end(default end is "\n",automatically carriage return)
+          */
+        void writeLog(std::ofstream &log, std::string message, std::string end = "\n");
+        /**\brief read csv file
+		  *\param[in] fileName the input file name
+		  *\param[out] table the 2d vector to store the data
+		  *\param[in] sep the separator to separate each column, usually ","
+		  *\param[out] report the reading process report(record open file name,time,bad lines, etc)
+		  *\param[in] fields the number of fields to read(-1 means use total number of fields in the first line of the file)
+		  *\param[in] read_header whether to read first line as header or not
+		  *\param[out] headers the headers of the table(if read_header is true)
+		  *\param[in] numberOfRedirect number of fields to be redirected(not stored in table),should be less than fields
+		  *\param[in] directFunc the function to redirect first numberOfRedirect of fields
+		  *\note:parameter of directFunc must have the same dimension as numberOfRedirect
+		  *\the last parameter directFuncs can be defined as follows if trying to redirect to point cloud(cloud_in is a global pc pointer)
+			void direct(const std::vector<float> &vec) {
+				pcl::PointXYZRGB pt = pcl::PointXYZRGB();
+				pt.x = vec[0];
+				pt.y = vec[1];
+		    	pt.z = vec[2];
+				pt.r = (uint8_t)(vec[3]);
+				pt.g = (uint8_t)(vec[4]);
+				pt.b = (uint8_t)(vec[5]);
+				cloud_in->points.push_back(pt);
+			}
+		*\addition: if the columns of data is less than required, it will fill with 0s;
+		*\			if data column is larger than required, the rest will be abbreviated
+		*/
 		bool read_csv(const std::string &fileName, std::vector<std::vector<float> > &table, const std::string &sep,
 		        std::string &report, std::vector<std::string> &headers, int fields = -1, bool read_header = false,
 		        int numberOfRedirect = 0, void(*directFunc)(const std::vector<float>&) = NULL);
@@ -289,6 +291,94 @@ namespace lyxutils
 		/**\brief check file for existence
 		  */
 		bool fileExists(std::string fileName);
+		/**\brief command line option
+		 * define long option name, whether it has argument and what is the corresponding short option
+		 * optName-define the long option name,i.e.help
+		 * hasArg -define whether the long option requires argument:0-no argument,1-optional argument,2-require argument
+		 * abbr   -define the corresponding short version of the option:NULL-no short version,not NULL-point to the short option
+		 * i.e: CLOption opt={"target-location",2,new char('t')};
+		 */
+        struct CLOption{
+            std::string optName;
+            int hasArg;
+            char *abbr;
+            ~CLOption();
+        };
+		/**\brief command line parser
+		 * \usage:
+		 *      //1.if no option pattern is given,every option requires an argument or optional argument
+		 *      CLParser parser;
+		 *      std::string cmd="cmd --target a.txt -v --when=always b.txt";
+		 *      try{
+		 *          parser.parse(cmd);
+		 *          parser.hasOption("v");//=>bool:true
+         *          parser.getOptionArg("when");//=>string:"always"
+         *          parser.getParameters();//=>vector of strings,contains "b.txt",
+         *          parser.getAllOptions();//=>map of option-argument pair
+         *      }catch(std::invalid_argument ia){cout<<ia.what()<<endl;}
+         *      //2.if option pattern is given,all applicable short option will be replaced by longer ones
+         *      CLOption options={
+         *          {"verbose",0,new char('v')},//--verbose is equivalent to -v, this option requires no argument
+         *          {"when",1,NULL},            //--when has no abbreviated form, --when=arg to assign argument to option
+         *          {"target",2,new char('t')}  //--target is equivalent to -t, this option requires an argument
+         *      };
+         *      try{...}catch(std::invalid_argument ia){cout<<ia.what()<<endl;}
+         *      //3.for sub commands parse:
+         *      if(argc>1&&string(argv[1])=="sub1"){dealSub1(argc-1,argv[1:]);}
+         *      else if(argc>1&&string(argv[1])=="sub2"){dealSub2(argc-1,argv[1:]);}
+         *      ...
+         *      else dealCommand(argc,argv);
+		 */
+		class CLParser{
+		public:
+            CLParser();
+            /**\brief parse a line of command
+             * split command line using space or tab and feed to function parse(const vector<string> &argv) to parse
+             * this function throws exceptions when:
+             *      1.unrecognized option(only when option pattern is given)->invalid_argument
+             *      2.option has no argument(only when argument is required)->invalid_argument
+             */
+            void parse(std::string command);
+            /**\brief parse command line
+             * this function throws exceptions when:
+             *      1.unrecognized option(only when option pattern is given)->invalid_argument
+             *      2.option has no argument(only when argument is required)->invalid_argument
+             */
+            void parse(int argc, char **argv);
+            /**\brief concatenate string of `commands` and string from file `filename` and parse
+             * this function throws exceptions when:
+             *      1.unrecognized option(only when option pattern is given)->invalid_argument
+             *      2.option has no argument(only when argument is required)->invalid_argument
+             *      3.file not exist->runtime_error
+             *      4.open file failed->runtime_error
+             */
+            void parse(std::string commands, std::string filename);
+            /**\brief set options and arguments pattern
+             */
+            void setOptionPattern(int num_opts, const lyxutils::io::CLOption *options);
+            void clearOptionPattern();
+            /**\brief check existence of option in the given command
+             */
+            bool hasOption(std::string optName);
+            /**\brief get the option value
+             * this option does not throw exception,user must use hasOption first to check the existence of optName
+             */
+            std::string getOptionArg(std::string optName);
+            /**\brief get all options parsed
+             */
+            std::map<std::string, std::string> getAllOptions();
+            /**\brief get all parameters
+             */
+            std::vector<std::string> getParameters();
+		private:
+		    bool _pattern_set=false;
+            std::map<std::string,std::string> _opt_val;
+            std::vector<std::string> _parameters;
+            std::map<std::string,std::string> _short2verbose;
+            std::map<std::string,CLOption> _opt_patterns;
+
+            void parse(const std::vector<std::string> &argv);
+		};
 	}
 	/**\brief encapsulate some alorithms and Data structures
 	  */

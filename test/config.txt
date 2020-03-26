@@ -1,0 +1,5 @@
+--target a.cpp
+--alignment=right
+-v
+--when=necessary
+--object liba.so
