@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.4)
 project(Utils)
 set(CMAKE_BUILD_TYPE "Release")
 
@@ -8,8 +8,8 @@ include_directories(.)
 set(CMAKE_CXX_STANDARD 11)
 
 add_library(utils SHARED Utils.cpp)
-
-INSTALL(TARGETS utils LIBRARY DESTINATION /usr/local/lib/)
-INSTALL(FILES Utils.h DESTINATION /usr/local/include/lyxutils/)
-
 add_subdirectory(test)
+
+install(TARGETS utils LIBRARY DESTINATION lib)
+install(FILES Utils.h DESTINATION include/lyxutils/)
+install(FILES UtilsConfig.cmake DESTINATION lib/cmake/Utils/)
