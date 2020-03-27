@@ -4,7 +4,7 @@
 //项目-属性-配置属性-C/C++ -预处理器-预处理器定义中要添加_CRT_SECURE_NO_WARNINGS,否则lyxutils::debug::getTimeString函数会出现线程不安全报错
 #include <string>
 #include <iostream>
-#include <time.h>
+#include <ctime>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -172,8 +172,8 @@ namespace lyxutils
          *
          *|---------|-----|------------------------------|-----|
          *   shift    pad            text area             pad
-         *|----------------------------------------------------|
-         *                         width
+         *|---------|------------------------------------------|
+         *                             width
          *
          */
         std::string frame(const std::string &title,const std::string &text,int width,int pad,char border,int shift=0);
